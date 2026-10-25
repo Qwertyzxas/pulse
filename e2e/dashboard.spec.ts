@@ -1,7 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-// The deterministic simulator keeps these tests independent of the exchange
 const DEMO = './?demo&seed=7';
 
 async function waitForChart(page: Page) {
@@ -21,7 +20,6 @@ test('shows markets, chart, order book and trades', async ({ page }) => {
   await expect(page.getByRole('list', { name: 'Заявки на продажу' }).getByRole('listitem')).toHaveCount(15);
   await expect(page.getByRole('list', { name: 'Последние сделки' }).getByRole('listitem').first()).toBeVisible();
 
-  // the canvas actually painted candles
   const painted = await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => {
     const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
     let colored = 0;
@@ -58,7 +56,6 @@ test('crosshair legend follows the mouse and wheel zooms', async ({ page }) => {
   const left = await legend.textContent();
   expect(left).not.toEqual(right);
 
-  // zooming out shows older candles under the same cursor position
   await page.mouse.wheel(0, 600);
   await expect(legend).not.toHaveText(left!);
 });

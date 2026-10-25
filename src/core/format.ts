@@ -1,7 +1,3 @@
-/**
- * Decimals for a price so that it keeps ~5–6 significant digits:
- * 79 656.34 → 2, 3.1416 → 4, 0.000012345 → 9.
- */
 export function priceDecimals(price: number): number {
   const abs = Math.abs(price);
   if (!Number.isFinite(abs) || abs === 0) return 2;
@@ -30,7 +26,6 @@ export function formatPercent(value: number): string {
   return `${sign}${nf('pct', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(value))}%`;
 }
 
-/** 1 234 567 890 → «1,23 млрд» */
 export function formatCompact(value: number): string {
   return nf('compact', { notation: 'compact', maximumFractionDigits: 2 }).format(value);
 }

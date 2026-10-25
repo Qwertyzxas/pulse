@@ -23,7 +23,6 @@ const rows = computed(() =>
   }),
 );
 
-// ── virtual scrolling: only the visible rows exist in the DOM ──
 const viewport = ref<HTMLElement | null>(null);
 const scrollTop = ref(0);
 const height = ref(600);
@@ -54,11 +53,9 @@ function setSort(key: SortKey) {
   }
 }
 
-// aria-sort is only valid on table headers; for buttons the direction goes into the name
 const sortLabel = (key: SortKey, label: string) =>
   sort.value === key ? `${label}, ${dir.value === 'asc' ? 'по возрастанию' : 'по убыванию'}` : label;
 
-/** ↑/↓ inside the list switch pairs and keep the selected row in view. */
 async function onKeydown(event: KeyboardEvent) {
   const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
   if (!step || !rows.value.length) return;

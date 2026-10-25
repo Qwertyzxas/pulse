@@ -27,7 +27,6 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npx playwright install --with-deps chromium
-      # e2e runs on the deterministic market simulator; the live Binance test is opt-in (LIVE=1)
       - run: npm run e2e
         env:
           CI: true

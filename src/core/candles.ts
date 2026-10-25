@@ -15,11 +15,6 @@ export const intervalMs = (interval: Interval) => INTERVALS.find((i) => i.id ===
 
 export const MAX_CANDLES = 1000;
 
-/**
- * Applies a live candle update: replaces the last candle when it has the same
- * open time, appends a newer one, ignores stale updates. Returns the same array
- * reference when nothing changed.
- */
 export function mergeCandle(series: Candle[], candle: Candle): Candle[] {
   const last = series.at(-1);
   if (!last || candle.time > last.time) {

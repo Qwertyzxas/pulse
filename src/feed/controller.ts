@@ -6,7 +6,6 @@ import { SimulatedFeed } from './simulator';
 import type { FeedHandlers, FeedSource } from './source';
 
 export const FLUSH_INTERVAL = 200;
-/** Live mode falls back to demo data when no tickers arrive within this time. */
 export const FIRST_DATA_TIMEOUT = 10_000;
 
 export interface ControllerDeps {
@@ -23,11 +22,6 @@ const defaultDeps = (): ControllerDeps => ({
   clearTimeout: (id) => clearTimeout(id),
 });
 
-/**
- * Runs inside the Web Worker: owns the data source, falls back from live to
- * demo data, and batches everything for the UI thread. Framework-free and
- * driven by plain commands, so it is unit-testable without a real worker.
- */
 export class FeedController {
   private readonly deps: ControllerDeps;
   private readonly batcher: Batcher;
@@ -69,7 +63,6 @@ export class FeedController {
     this.deps.clearTimeout(this.firstDataTimer);
     this.batcher.clearSelection();
     const generation = ++this.generation;
-    // callbacks from a replaced source (in-flight fetches, late socket frames) are ignored
     const live = <A extends unknown[]>(fn: (...args: A) => void) => (...args: A) => {
       if (generation === this.generation) fn(...args);
     };

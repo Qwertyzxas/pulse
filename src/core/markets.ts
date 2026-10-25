@@ -28,11 +28,9 @@ export function queryMarkets(tickers: Iterable<Ticker>, q: MarketQuery): Ticker[
   }
   const sign = q.dir === 'asc' ? 1 : -1;
   const by = compare[q.sort];
-  // tie-break by symbol so rows don't jump around between updates
   return result.sort((a, b) => by(a, b) * sign || a.symbol.localeCompare(b.symbol));
 }
 
-/** Liquidity threshold for "top movers": ignores tiny illiquid pairs. */
 export const LIQUID_VOLUME = 1_000_000;
 
 export function marketStats(tickers: Iterable<Ticker>) {
@@ -52,7 +50,6 @@ export function marketStats(tickers: Iterable<Ticker>) {
   return { total, gainers, losers, best, worst };
 }
 
-/** Builds a ticker from 24h numbers, deriving change and tick direction. */
 export function makeTicker(
   symbol: string,
   quote: string,

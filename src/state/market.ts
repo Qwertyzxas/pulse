@@ -37,8 +37,6 @@ export interface MarketOptions {
 }
 
 export function createMarket(transport: Transport, options: MarketOptions) {
-  // shallowRefs: hundreds of tickers and candles are replaced wholesale per batch,
-  // deep reactivity would only add proxy overhead
   const tickers = shallowRef(new Map<string, Ticker>());
   const candles = shallowRef<Candle[]>([]);
   const book = shallowRef<OrderBook | null>(null);
@@ -46,7 +44,6 @@ export function createMarket(transport: Transport, options: MarketOptions) {
   const symbol = ref(options.symbol);
   const interval = ref<Interval>(options.interval);
   const historyLoaded = ref(false);
-  /** Bumped on every fresh history load: the chart resets its viewport then */
   const historyVersion = ref(0);
   const status = ref<FeedStatus>({ mode: options.mode, state: 'connecting', messagesPerSecond: 0 });
   const favorites = ref(loadFavorites(options.storage));
@@ -60,7 +57,6 @@ export function createMarket(transport: Transport, options: MarketOptions) {
         break;
       case 'history':
         if (event.symbol !== symbol.value || event.interval !== interval.value) return;
-        // a gap-filling refresh after a reconnect must not reset the chart viewport
         if (!event.refresh || !historyLoaded.value) historyVersion.value++;
         candles.value = event.candles;
         historyLoaded.value = true;
@@ -105,7 +101,6 @@ export function createMarket(transport: Transport, options: MarketOptions) {
     try {
       options.storage?.setItem(FAVORITES_KEY, JSON.stringify([...next]));
     } catch {
-      /* storage unavailable: favorites live for this session only */
     }
   }
 

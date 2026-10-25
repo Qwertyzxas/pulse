@@ -4,7 +4,6 @@ import type { Candle, Interval, OrderBook, Ticker, Trade } from '../core/types';
 import { seededRandom } from '../core/util';
 import type { FeedHandlers, FeedSource } from './source';
 
-/** Base asset and a realistic starting price */
 export const DEMO_MARKETS: [string, number][] = [
   ['BTC', 79650], ['ETH', 3050], ['SOL', 182], ['BNB', 610], ['XRP', 2.41], ['DOGE', 0.182], ['ADA', 0.71],
   ['TRX', 0.27], ['AVAX', 24.6], ['LINK', 15.8], ['TON', 3.2], ['DOT', 4.3], ['LTC', 88], ['BCH', 420],
@@ -21,9 +20,7 @@ interface Market {
   high: number;
   low: number;
   volume: number;
-  /** per-second volatility */
   sigma: number;
-  /** daily quote volume scale */
   liquidity: number;
 }
 
@@ -39,11 +36,6 @@ const defaultDeps = (): SimulatorDeps => ({
   clearInterval: (id) => clearInterval(id),
 });
 
-/**
- * Deterministic synthetic market (geometric Brownian motion) with the same
- * interface as the live feed. Used when the exchange is unreachable, for
- * `?demo` links and for end-to-end tests.
- */
 export class SimulatedFeed implements FeedSource {
   private readonly random: () => number;
   private readonly deps: SimulatorDeps;
@@ -62,7 +54,7 @@ export class SimulatedFeed implements FeedSource {
     this.random = seededRandom(seed);
     this.deps = { ...defaultDeps(), ...deps };
     for (const [rank, [base, price]] of DEMO_MARKETS.entries()) {
-      const drift = 1 + (this.random() - 0.5) * 0.12; // ±6% over the "day"
+      const drift = 1 + (this.random() - 0.5) * 0.12;
       const open = price / drift;
       this.markets.set(`${base}USDT`, {
         symbol: `${base}USDT`,
@@ -71,15 +63,12 @@ export class SimulatedFeed implements FeedSource {
         high: Math.max(price, open) * (1 + this.random() * 0.02),
         low: Math.min(price, open) * (1 - this.random() * 0.02),
         volume: 0,
-        // ≈ 35–120% annualised, the realistic range for crypto (BTC ≈ 0.0001/s)
         sigma: 0.00006 + this.random() * 0.00016,
-        // DEMO_MARKETS is ordered by market cap: volume falls off with rank, like on a real exchange
         liquidity: (2.5e9 / (rank + 1) ** 1.3) * (0.7 + this.random() * 0.6),
       });
     }
   }
 
-  /** Normally distributed sample (Box–Muller). */
   private gaussian() {
     const u = 1 - this.random();
     const v = this.random();
@@ -114,7 +103,6 @@ export class SimulatedFeed implements FeedSource {
     this.emitBook();
   }
 
-  /** Walks backwards from the current price so the last candle matches the ticker. */
   private history(market: Market, interval: Interval, count: number): Candle[] {
     const step = intervalMs(interval);
     const lastOpen = Math.floor(this.deps.now() / step) * step;
@@ -136,7 +124,6 @@ export class SimulatedFeed implements FeedSource {
     const now = this.deps.now();
     const changed: Market[] = [];
     for (const m of this.markets.values()) {
-      // not every pair trades every second
       if (this.random() < 0.35) continue;
       m.price *= Math.exp(m.sigma * this.gaussian());
       m.high = Math.max(m.high, m.price);

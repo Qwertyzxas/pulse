@@ -18,7 +18,6 @@ import type { WorkerEvent } from './protocol';
 import { SimulatedFeed } from './simulator';
 import type { FeedHandlers, FeedSource } from './source';
 
-// Real payloads captured from data-api.binance.vision / data-stream.binance.vision
 const REST_TICKER = {"symbol":"BTCUSDT","priceChange":"-1960.26000000","priceChangePercent":"-2.400","weightedAvgPrice":"80589.31979209","prevClosePrice":"81668.01000000","lastPrice":"79707.74000000","lastQty":"0.00539000","bidPrice":"79707.74000000","bidQty":"4.75326000","askPrice":"79707.75000000","askQty":"1.76826000","openPrice":"81668.00000000","highPrice":"81846.26000000","lowPrice":"79220.74000000","volume":"12615.93228000","quoteVolume":"1016709400.98831450","openTime":1792773564012,"closeTime":1792859964012,"firstId":6787290713,"lastId":6788926070,"count":1635358};
 const REST_KLINE = [1792857600000,"79803.74000000","79911.11000000","79580.00000000","79707.74000000","388.51586000",1792861199999,"30983804.35850270",95464,"177.84555000","14183107.83309160","0"];
 const WS_MINI = {"e":"24hrMiniTicker","E":1792859985015,"s":"BTCUSDT","c":"79707.75000000","o":"81668.00000000","h":"81846.26000000","l":"79220.74000000","v":"12616.1","q":"1016725000.1"};
@@ -38,7 +37,7 @@ describe('Binance parsers', () => {
     expect(parseRestTicker(REST_TICKER)).toEqual({
       symbol: 'BTCUSDT', price: 79707.74, open: 81668, high: 81846.26, low: 79220.74, volume: 12615.93228, quoteVolume: 1016709400.9883145,
     });
-    expect(parseRestTicker({ ...REST_TICKER, count: 0 })).toBeNull(); // delisted
+    expect(parseRestTicker({ ...REST_TICKER, count: 0 })).toBeNull();
     expect(parseMiniTicker(WS_MINI)).toMatchObject({ symbol: 'BTCUSDT', price: 79707.75, open: 81668 });
   });
 
@@ -47,12 +46,11 @@ describe('Binance parsers', () => {
     expect(parseKlineEvent(WS_KLINE)).toMatchObject({ symbol: 'BTCUSDT', interval: '1m', candle: { time: 1792859940000, close: 79707.75 } });
     const book = parseDepth('BTCUSDT', WS_DEPTH);
     expect(book.bids).toHaveLength(2);
-    expect(book.asks).toEqual([[79707.75, 1.28358]]); // zero-quantity level dropped
+    expect(book.asks).toEqual([[79707.75, 1.28358]]);
     expect(parseAggTrade(WS_TRADE)).toEqual({ id: 4097095982, price: 79707.75, qty: 0.02454, time: 1792859986234, sell: false });
   });
 });
 
-// ── fakes ────────────────────────────────────────────────────
 class FakeSocket {
   static instances: FakeSocket[] = [];
   readyState = 0;
@@ -174,7 +172,7 @@ describe('BinanceFeed', () => {
     socket().receive('!miniTicker@arr', [WS_MINI]);
     socket().close();
     expect(FakeSocket.instances).toHaveLength(1);
-    vi.advanceTimersByTime(1000); // backoffDelay(0) with random = 1
+    vi.advanceTimersByTime(1000);
     expect(FakeSocket.instances).toHaveLength(2);
     socket().open();
     expect(socket().sent).toHaveLength(1);
@@ -195,7 +193,7 @@ describe('BinanceFeed', () => {
     await flush();
     socket().open();
     await flush();
-    expect(calls.candles.filter((c) => c.replace)).toHaveLength(1); // the first open is not a reconnect
+    expect(calls.candles.filter((c) => c.replace)).toHaveLength(1);
 
     socket().receive('!miniTicker@arr', [WS_MINI]);
     socket().close();
@@ -210,7 +208,7 @@ describe('BinanceFeed', () => {
     vi.advanceTimersByTime(1000);
     socket().open();
     await flush();
-    expect(calls.candles.filter((c) => c.replace)).toHaveLength(2); // no empty history wiping the chart
+    expect(calls.candles.filter((c) => c.replace)).toHaveLength(2);
     feed.stop();
   });
 
@@ -251,7 +249,6 @@ describe('SimulatedFeed', () => {
 
   it('is deterministic for a given seed', () => {
     expect(run(7).tickers).toEqual(run(7).tickers);
-    // a different seed gives a different market
     expect(run(7).tickers[0]![0]!.changePercent).not.toBe(run(8).tickers[0]![0]!.changePercent);
   });
 
@@ -260,7 +257,6 @@ describe('SimulatedFeed', () => {
     const history = calls.candles.find((c) => c.replace)!.candles;
     expect(history).toHaveLength(500);
     expect(history.every((c) => c.high >= Math.max(c.open, c.close) && c.low <= Math.min(c.open, c.close))).toBe(true);
-    // candles are contiguous and end at the current hour
     expect(history[1]!.time - history[0]!.time).toBe(3_600_000);
     const book = calls.book.at(-1)!;
     expect(book.asks[0]![0]).toBeGreaterThan(book.bids[0]![0]);
@@ -276,13 +272,13 @@ describe('Batcher', () => {
     b.pushTickers([t('A', 2)]);
     b.pushTrades('A', Array.from({ length: 80 }, (_, i) => ({ id: i }) as Trade));
     b.flush();
-    b.flush(); // nothing pending → no message
+    b.flush();
 
     expect(events).toHaveLength(1);
     const batch = events[0] as Extract<WorkerEvent, { type: 'batch' }>;
     expect(batch.tickers.map((x) => [x.symbol, x.price])).toEqual([['A', 2], ['B', 1]]);
     expect(batch.trades!.trades).toHaveLength(50);
-    expect(batch.trades!.trades[0]!.id).toBe(30); // newest kept
+    expect(batch.trades!.trades[0]!.id).toBe(30);
   });
 });
 

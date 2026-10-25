@@ -1,4 +1,3 @@
-/** Simple moving average; positions without enough history are NaN. */
 export function sma(values: number[], period: number): number[] {
   const out = new Array<number>(values.length).fill(NaN);
   let sum = 0;
@@ -10,7 +9,6 @@ export function sma(values: number[], period: number): number[] {
   return out;
 }
 
-/** Exponential moving average seeded with the SMA of the first `period` values. */
 export function ema(values: number[], period: number): number[] {
   const out = new Array<number>(values.length).fill(NaN);
   if (values.length < period) return out;

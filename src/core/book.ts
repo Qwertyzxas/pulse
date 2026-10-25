@@ -3,8 +3,7 @@ import type { BookLevel, OrderBook } from './types';
 export interface DepthRow {
   price: number;
   qty: number;
-  total: number; // cumulative quantity from the best price
-  /** 0..1 share of the deepest cumulative total on either side — bar width */
+  total: number;
   depth: number;
 }
 
@@ -17,7 +16,6 @@ function cumulate(levels: BookLevel[], count: number): { rows: DepthRow[]; max: 
   return { rows, max: total };
 }
 
-/** Prepares both sides of the book for rendering with comparable depth bars. */
 export function depthView(book: OrderBook | null, count: number) {
   if (!book) return { asks: [], bids: [], spread: null, spreadPercent: null, mid: null };
   const asks = cumulate(book.asks, count);
@@ -30,7 +28,6 @@ export function depthView(book: OrderBook | null, count: number) {
   const spread = bestAsk !== undefined && bestBid !== undefined ? bestAsk - bestBid : null;
   const mid = spread !== null ? (bestAsk! + bestBid!) / 2 : null;
   return {
-    // asks are shown above the spread, highest first
     asks: asks.rows.reverse(),
     bids: bids.rows,
     spread,

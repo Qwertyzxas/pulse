@@ -3,11 +3,6 @@ import type { WorkerEvent } from './protocol';
 
 export const MAX_TRADES_PER_BATCH = 50;
 
-/**
- * Coalesces high-frequency updates so the UI thread gets at most one message
- * per interval: tickers keep the latest value per symbol, the order book and
- * the live candle keep only their latest state, trades are capped.
- */
 export class Batcher {
   private tickers = new Map<string, Ticker>();
   private candle: { symbol: string; interval: Interval; candle: Candle } | null = null;
@@ -34,7 +29,6 @@ export class Batcher {
     if (this.trades.trades.length > MAX_TRADES_PER_BATCH) this.trades.trades = this.trades.trades.slice(-MAX_TRADES_PER_BATCH);
   }
 
-  /** Drops pending per-symbol data (after switching symbol) but keeps tickers. */
   clearSelection() {
     this.candle = null;
     this.book = null;

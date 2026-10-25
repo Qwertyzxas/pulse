@@ -2,7 +2,6 @@ import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  // served from https://<user>.github.io/pulse/
   base: '/pulse/',
   plugins: [vue()],
   worker: { format: 'es' },

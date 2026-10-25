@@ -7,7 +7,6 @@ import { makeTicker, marketStats, queryMarkets, type MarketQuery } from './marke
 import type { Candle, Ticker } from './types';
 import { backoffDelay, seededRandom, virtualRange } from './util';
 
-// Intl uses narrow no-break spaces as group separators in ru-RU
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
 
 describe('format', () => {
@@ -45,7 +44,7 @@ describe('mergeCandle', () => {
     const next = mergeCandle(series, candle(2, 12));
     expect(next).toHaveLength(2);
     expect(next[1]!.close).toBe(12);
-    expect(series[1]!.close).toBe(11); // immutable
+    expect(series[1]!.close).toBe(11);
   });
 
   it('appends a new candle and ignores stale or identical updates', () => {
@@ -115,7 +114,7 @@ describe('markets', () => {
   it('ignores illiquid pairs for top movers', () => {
     const stats = marketStats(tickers);
     expect(stats).toMatchObject({ total: 4, gainers: 3, losers: 1 });
-    expect(stats.best?.base).toBe('DOGE'); // TINY rose 100% but has no volume
+    expect(stats.best?.base).toBe('DOGE');
     expect(stats.worst?.base).toBe('ETH');
   });
 });
@@ -123,7 +122,7 @@ describe('markets', () => {
 describe('depthView', () => {
   it('accumulates both sides against a shared maximum', () => {
     const view = depthView({ symbol: 'X', asks: [[101, 1], [102, 3]], bids: [[100, 2], [99, 2]] }, 10);
-    expect(view.asks.map((r) => r.price)).toEqual([102, 101]); // highest ask on top
+    expect(view.asks.map((r) => r.price)).toEqual([102, 101]);
     expect(view.asks.map((r) => r.total)).toEqual([4, 1]);
     expect(view.bids.map((r) => r.depth)).toEqual([0.5, 1]);
     expect(view.spread).toBe(1);

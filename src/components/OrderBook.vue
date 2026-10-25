@@ -8,7 +8,6 @@ const LEVELS = 15;
 const market = useMarket();
 const view = computed(() => depthView(market.book.value, LEVELS));
 const decimals = computed(() => priceDecimals(market.book.value?.bids[0]?.[0] ?? market.selected.value?.price ?? 1));
-// the last trade is fresher than the 1-second ticker, so it anchors the spread row
 const last = computed(() => {
   const trade = market.trades.value[0];
   const ticker = market.selected.value;

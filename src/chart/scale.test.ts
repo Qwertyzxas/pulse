@@ -67,7 +67,6 @@ describe('priceExtent', () => {
 describe('niceTicks', () => {
   it('uses 1/2/5 steps', () => {
     expect(niceTicks(0, 100, 5)).toEqual([0, 20, 40, 60, 80, 100]);
-    // maxTicks is an upper bound: 680 / 6 ≈ 113 rounds up to a step of 200
     expect(niceTicks(79210, 79890, 6)).toEqual([79400, 79600, 79800]);
     expect(niceTicks(0.1, 0.35, 5)).toEqual([0.1, 0.15, 0.2, 0.25, 0.3, 0.35]);
   });

@@ -13,7 +13,6 @@ const market = useMarket();
 const chart = ref<InstanceType<typeof PriceChart> | null>(null);
 const indicators = reactive({ sma: true, ema: false });
 
-// shareable URL: ?s=ETHUSDT&i=4h (demo flags are kept)
 watch([market.symbol, market.interval], ([s, i]) => {
   const params = new URLSearchParams(location.search);
   params.set('s', s);

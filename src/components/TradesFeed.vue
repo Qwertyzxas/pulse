@@ -12,7 +12,6 @@ const market = useMarket();
     </header>
     <div class="book__head" aria-hidden="true"><span>Цена</span><span>Кол-во</span><span>Время</span></div>
     <p v-if="!market.trades.value.length" class="empty">Ожидание сделок…</p>
-    <!-- focusable so keyboard users can scroll the feed -->
     <ol class="trades__list" aria-label="Последние сделки" tabindex="0">
       <li v-for="trade in market.trades.value" :key="trade.id" class="trades__row">
         <span class="num" :class="trade.sell ? 'down' : 'up'">{{ formatPrice(trade.price) }}</span>

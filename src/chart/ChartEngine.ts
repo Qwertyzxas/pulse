@@ -38,11 +38,6 @@ const TOP_PAD = 12;
 const VOLUME_SHARE = 0.18;
 const FONT = '11px "JetBrains Mono Variable", ui-monospace, monospace';
 
-/**
- * Canvas candlestick chart. Imperative on purpose: a few thousand shapes per
- * frame are far cheaper as canvas calls than as DOM/SVG nodes, and drawing only
- * happens on demand (dirty flag + requestAnimationFrame).
- */
 export class ChartEngine {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
@@ -84,7 +79,6 @@ export class ChartEngine {
     return this.canvas;
   }
 
-  /** `reset` — a new symbol/interval: fit the latest candles again. */
   setData(candles: Candle[], interval: Interval, reset: boolean) {
     const appended = candles.length - this.candles.length;
     this.candles = candles;
@@ -125,7 +119,6 @@ export class ChartEngine {
     this.canvas.remove();
   }
 
-  // ── geometry ─────────────────────────────────────────────
   private get plotRight() {
     return this.width - AXIS_WIDTH;
   }
@@ -172,7 +165,6 @@ export class ChartEngine {
     this.onHover(this.candles[index] ?? null, this.candles[index - 1] ?? null);
   }
 
-  // ── interaction ──────────────────────────────────────────
   private bind() {
     const c = this.canvas;
     const local = (e: PointerEvent | WheelEvent | MouseEvent) => {
@@ -212,7 +204,6 @@ export class ChartEngine {
       (e) => {
         e.preventDefault();
         const factor = Math.exp(-e.deltaY * 0.0015);
-        // while following the latest candle, zoom keeps the right edge pinned
         const x = this.follow ? this.plotRight : local(e).x;
         this.setViewport(zoomAt(this.vp, factor, x, this.plotRight));
       },
@@ -238,7 +229,6 @@ export class ChartEngine {
     });
   }
 
-  // ── drawing ──────────────────────────────────────────────
   private draw() {
     const { ctx, colors, candles, vp } = this;
     const plotRight = this.plotRight;
@@ -256,7 +246,6 @@ export class ChartEngine {
     const x = (index: number) => indexToX(index, vp, plotRight);
     const decimals = priceDecimals(candles.at(-1)!.close);
 
-    // grid + price axis values
     const priceTicks = niceTicks(min, max, Math.max(2, Math.floor(plotHeight / 56)));
     const timeTicks = timeTickIndices(from, to, vp.barSpacing);
     ctx.strokeStyle = colors.grid;
@@ -279,7 +268,6 @@ export class ChartEngine {
     ctx.rect(0, 0, plotRight, plotBottom);
     ctx.clip();
 
-    // volume, overlaid at the bottom of the plot
     let maxVolume = 0;
     for (let i = from; i <= to; i++) maxVolume = Math.max(maxVolume, candles[i]!.volume);
     const volumeHeight = plotHeight * VOLUME_SHARE;
@@ -293,7 +281,6 @@ export class ChartEngine {
     }
     ctx.globalAlpha = 1;
 
-    // candles: wicks then bodies, batched per colour
     for (const up of [true, false]) {
       ctx.strokeStyle = ctx.fillStyle = up ? colors.up : colors.down;
       ctx.beginPath();
@@ -314,7 +301,6 @@ export class ChartEngine {
       }
     }
 
-    // moving averages
     const line = (values: number[], color: string) => {
       ctx.strokeStyle = color;
       ctx.lineWidth = 1.5;
@@ -333,7 +319,6 @@ export class ChartEngine {
     if (this.indicators.sma) line(this.smaLine, colors.sma);
     if (this.indicators.ema) line(this.emaLine, colors.ema);
 
-    // last price line
     const last = candles.at(-1)!;
     const lastColor = last.close >= last.open ? colors.up : colors.down;
     const lastY = Math.round(y(last.close)) + 0.5;
@@ -345,7 +330,6 @@ export class ChartEngine {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // crosshair
     const hovered = this.hoveredIndex();
     if (this.hover && hovered !== null) {
       const hx = Math.round(x(hovered)) + 0.5;
@@ -362,7 +346,6 @@ export class ChartEngine {
     }
     ctx.restore();
 
-    // axes
     ctx.fillStyle = colors.text;
     ctx.textAlign = 'left';
     for (const p of priceTicks) ctx.fillText(formatPrice(p, decimals), plotRight + 8, y(p));

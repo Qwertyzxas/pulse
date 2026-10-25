@@ -3,7 +3,6 @@ import type { Candle, Interval, OrderBook, Ticker, Trade } from '../core/types';
 import { backoffDelay } from '../core/util';
 import type { FeedHandlers, FeedSource } from './source';
 
-// Binance's public market-data-only endpoints: no API key, read-only
 export const REST_URL = 'https://data-api.binance.vision/api/v3';
 export const WS_URL = 'wss://data-stream.binance.vision/stream';
 export const QUOTE = 'USDT';
@@ -11,12 +10,10 @@ export const QUOTE = 'USDT';
 const LEVERAGED = /(UP|DOWN|BULL|BEAR)USDT$/;
 const STABLES = new Set(['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'USDPUSDT', 'DAIUSDT', 'EURUSDT', 'AEURUSDT', 'EURIUSDT', 'USD1USDT', 'BUSDUSDT', 'XUSDUSDT', 'USDEUSDT']);
 
-/** USDT spot pairs worth showing: no leveraged tokens and no stablecoin-to-stablecoin pairs. */
 export const isListed = (symbol: string) => symbol.endsWith(QUOTE) && !LEVERAGED.test(symbol) && !STABLES.has(symbol);
 
 const num = (v: unknown) => Number(v);
 
-// ── parsers (pure) ───────────────────────────────────────────
 export interface TickerFields {
   symbol: string;
   price: number;
@@ -27,7 +24,6 @@ export interface TickerFields {
   quoteVolume: number;
 }
 
-/** GET /ticker/24hr item. Pairs without trades in 24h (delisted) are skipped. */
 export function parseRestTicker(raw: Record<string, unknown>): TickerFields | null {
   const symbol = String(raw.symbol);
   if (!isListed(symbol) || !(num(raw.count) > 0)) return null;
@@ -42,7 +38,6 @@ export function parseRestTicker(raw: Record<string, unknown>): TickerFields | nu
   };
 }
 
-/** One element of the `!miniTicker@arr` stream. */
 export function parseMiniTicker(raw: Record<string, unknown>): TickerFields | null {
   const symbol = String(raw.s);
   if (!isListed(symbol)) return null;
@@ -57,7 +52,6 @@ export function parseMiniTicker(raw: Record<string, unknown>): TickerFields | nu
   };
 }
 
-/** GET /klines row: [openTime, open, high, low, close, volume, …] */
 export const parseRestKline = (row: unknown[]): Candle => ({
   time: num(row[0]),
   open: num(row[1]),
@@ -94,7 +88,6 @@ export const symbolStreams = (symbol: string, interval: Interval) => {
   return [`${s}@kline_${interval}`, `${s}@depth20@100ms`, `${s}@aggTrade`];
 };
 
-// ── live source ──────────────────────────────────────────────
 export interface BinanceDeps {
   fetch: typeof fetch;
   WebSocket: typeof WebSocket;
@@ -117,11 +110,8 @@ const defaultDeps = (): BinanceDeps => ({
   random: Math.random,
 });
 
-/** No message for this long means the socket is silently dead. */
 export const STALE_AFTER = 15_000;
-/** A socket stuck in CONNECTING (e.g. filtered by a firewall) is abandoned after this. */
 export const CONNECT_TIMEOUT = 8_000;
-/** Without any data after this many attempts we give up and let the app fall back. */
 export const MAX_FAILED_ATTEMPTS = 4;
 
 export class BinanceFeed implements FeedSource {
@@ -153,7 +143,6 @@ export class BinanceFeed implements FeedSource {
     this.handlers.status({ mode: 'live', state: 'connecting' });
     void this.loadTickers();
     this.connect();
-    // watchdog + message-rate meter share one 1s timer
     this.watchdog = this.deps.setInterval(() => {
       this.handlers.status({ messagesPerSecond: this.messages });
       this.messages = 0;
@@ -186,7 +175,6 @@ export class BinanceFeed implements FeedSource {
       const rows = (await response.json()) as Record<string, unknown>[];
       this.applyTickers(rows.map(parseRestTicker));
     } catch {
-      // the WebSocket fills tickers in anyway; only total failure triggers a fallback
     }
   }
 
@@ -196,11 +184,9 @@ export class BinanceFeed implements FeedSource {
       const response = await this.deps.fetch(`${REST_URL}/klines?symbol=${symbol}&interval=${interval}&limit=500`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const rows = (await response.json()) as unknown[][];
-      // a newer selection may have happened while the request was in flight
       if (token !== this.historyToken) return;
       this.handlers.candles(symbol, interval, rows.map(parseRestKline), true, refresh);
     } catch {
-      // a failed refresh keeps the candles already on screen
       if (token === this.historyToken && !refresh) this.handlers.candles(symbol, interval, [], true);
     }
   }
@@ -215,7 +201,6 @@ export class BinanceFeed implements FeedSource {
       this.lastMessageAt = this.deps.now();
       this.handlers.status({ state: 'open' });
       this.syncSubscriptions();
-      // candles that closed while the socket was down never arrive on the stream
       if (this.everReceived && this.selected) void this.loadHistory(this.selected.symbol, this.selected.interval, true);
     };
     ws.onmessage = (event) => {
@@ -239,7 +224,6 @@ export class BinanceFeed implements FeedSource {
     };
   }
 
-  /** Swaps per-symbol streams on the open socket instead of reconnecting. */
   private syncSubscriptions() {
     const ws = this.ws;
     if (!ws || ws.readyState !== 1) return;
@@ -265,13 +249,13 @@ export class BinanceFeed implements FeedSource {
 
   private route(message: { stream?: string; data?: unknown }) {
     const { stream, data } = message;
-    if (!stream || !data) return; // subscription acks
+    if (!stream || !data) return;
     if (stream === '!miniTicker@arr') {
       this.applyTickers((data as Record<string, unknown>[]).map(parseMiniTicker));
       return;
     }
     const symbol = stream.split('@')[0]!.toUpperCase();
-    if (symbol !== this.selected?.symbol) return; // late message for a previous selection
+    if (symbol !== this.selected?.symbol) return;
     if (stream.includes('@kline_')) {
       const { interval, candle } = parseKlineEvent(data as never);
       if (interval === this.selected.interval) this.handlers.candles(symbol, interval, [candle], false);

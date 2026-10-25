@@ -89,7 +89,6 @@ h2 {
   text-align: center;
 }
 
-/* price flashes — the element is re-keyed on every update so the animation restarts */
 .flash-up {
   animation: flash-up 0.8s ease-out;
 }
@@ -112,7 +111,6 @@ h2 {
   }
 }
 
-/* ── layout ───────────────────────────────────────────────── */
 .app {
   display: flex;
   flex-direction: column;
@@ -167,7 +165,6 @@ h2 {
   font-weight: 600;
 }
 
-/* ── top bar ──────────────────────────────────────────────── */
 .topbar {
   display: flex;
   align-items: center;
@@ -285,7 +282,6 @@ h2 {
   text-decoration: underline;
 }
 
-/* ── markets ──────────────────────────────────────────────── */
 .tabs,
 .segmented {
   display: inline-flex;
@@ -459,7 +455,6 @@ h2 {
   font-size: 12px;
 }
 
-/* ── chart panel ──────────────────────────────────────────── */
 .pair {
   display: flex;
   flex-wrap: wrap;
@@ -624,7 +619,6 @@ h2 {
   }
 }
 
-/* ── order book & trades ──────────────────────────────────── */
 .book__head,
 .book__row,
 .trades__row {
@@ -657,7 +651,6 @@ h2 {
   overflow: hidden;
 }
 
-/* best prices hug the spread whatever the panel height */
 .book__side--asks {
   flex-direction: column;
   justify-content: flex-end;
@@ -734,7 +727,6 @@ h2 {
   }
 }
 
-/* ── responsive ───────────────────────────────────────────── */
 @media (max-width: 1280px) {
   .stats div:nth-child(n + 4) {
     display: none;

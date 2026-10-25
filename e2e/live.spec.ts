@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-// Talks to the real exchange, so it is opt-in: LIVE=1 npx playwright test live
 test.skip(!process.env.LIVE, 'set LIVE=1 to run against Binance');
 
 test('streams real market data from Binance', async ({ page }) => {

@@ -40,7 +40,6 @@ let transport: FakeTransport;
 let market: Market;
 
 beforeEach(() => {
-  // jsdom has no layout: give the virtual list a size
   globalThis.ResizeObserver ??= class {
     observe() {}
     unobserve() {}
@@ -74,7 +73,6 @@ describe('market store', () => {
     expect(market.candles.value.map((x) => x.close)).toEqual([10, 11]);
     expect(market.historyVersion.value).toBe(1);
 
-    // a refresh after a reconnect fills the gap but keeps the chart viewport
     transport.emit({ type: 'history', symbol: 'BTCUSDT', interval: '1h', candles: [c(1, 10), c(2, 11), c(3, 12)], refresh: true });
     expect(market.candles.value.map((x) => x.close)).toEqual([10, 11, 12]);
     expect(market.historyVersion.value).toBe(1);

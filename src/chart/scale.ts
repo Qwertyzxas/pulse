@@ -1,9 +1,5 @@
 import type { Candle, Interval } from '../core/types';
 
-/**
- * Horizontal view state. `endIndex` is the (fractional) candle index at the
- * right edge of the plot; it can run past the last candle to leave a margin.
- */
 export interface Viewport {
   endIndex: number;
   barSpacing: number;
@@ -30,7 +26,6 @@ export function visibleRange(count: number, vp: Viewport, plotWidth: number) {
   return { from, to };
 }
 
-/** Keeps the spacing in bounds and at least a few candles on screen. */
 export function clampViewport(vp: Viewport, count: number, plotWidth: number): Viewport {
   const barSpacing = clamp(vp.barSpacing, MIN_SPACING, MAX_SPACING);
   const min = Math.min(count - 1, 5);
@@ -38,14 +33,12 @@ export function clampViewport(vp: Viewport, count: number, plotWidth: number): V
   return { barSpacing, endIndex: clamp(vp.endIndex, min, max) };
 }
 
-/** Zoom keeping the candle under `x` in place. */
 export function zoomAt(vp: Viewport, factor: number, x: number, plotRight: number): Viewport {
   const anchor = xToIndex(x, vp, plotRight);
   const barSpacing = clamp(vp.barSpacing * factor, MIN_SPACING, MAX_SPACING);
   return { barSpacing, endIndex: anchor + (plotRight - x) / barSpacing };
 }
 
-/** The view "follows" new candles while the latest one is on screen. */
 export const isFollowing = (vp: Viewport, count: number) => vp.endIndex >= count - 1;
 
 export function priceExtent(candles: Candle[], from: number, to: number) {
@@ -66,7 +59,6 @@ export function priceExtent(candles: Candle[], from: number, to: number) {
   return { min: min - pad, max: max + pad };
 }
 
-/** "Nice" round axis values (1, 2, 5 × 10ⁿ steps) between min and max. */
 export function niceTicks(min: number, max: number, maxTicks: number): number[] {
   if (!(max > min) || maxTicks < 1) return [];
   const rough = (max - min) / maxTicks;
@@ -81,10 +73,6 @@ export function niceTicks(min: number, max: number, maxTicks: number): number[] 
   return ticks;
 }
 
-/**
- * Candle indices that get a time label. Labels sit on absolute multiples of
- * the step, so they don't shimmer while the chart is panned.
- */
 export function timeTickIndices(from: number, to: number, barSpacing: number, minGapPx = 90): number[] {
   const steps = [1, 2, 3, 5, 10, 15, 20, 30, 60, 120, 240, 480];
   const step = steps.find((s) => s * barSpacing >= minGapPx) ?? Math.ceil(minGapPx / barSpacing);
@@ -96,7 +84,6 @@ export function timeTickIndices(from: number, to: number, barSpacing: number, mi
 const dayFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' });
 const hourFormat = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-/** Day labels for daily candles and at day boundaries, clock time otherwise. */
 export function timeLabel(time: number, interval: Interval, previous?: number): string {
   if (interval === '1d') return dayFormat.format(time).replace('.', '');
   if (previous === undefined || new Date(previous).toDateString() !== new Date(time).toDateString()) {

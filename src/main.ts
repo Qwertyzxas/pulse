@@ -15,11 +15,9 @@ let storage: Storage | undefined;
 try {
   storage = localStorage;
 } catch {
-  /* blocked storage: favorites are kept in memory */
 }
 
 const market = createMarket(workerTransport(), {
-  // ?demo — synthetic market (offline showcase and end-to-end tests)
   mode: params.has('demo') ? 'demo' : 'live',
   seed: Number(params.get('seed')) || 42,
   symbol,
