@@ -81,8 +81,8 @@ export class FeedController {
         gotTickers = true;
         this.batcher.pushTickers(list);
       }),
-      candles: live((symbol, interval, candles, replace) => {
-        if (replace) this.post({ type: 'history', symbol, interval, candles });
+      candles: live((symbol, interval, candles, replace, refresh) => {
+        if (replace) this.post({ type: 'history', symbol, interval, candles, ...(refresh && { refresh }) });
         else if (candles[0]) this.batcher.pushCandle(symbol, interval, candles[0]);
       }),
       book: live((book) => this.batcher.pushBook(book)),

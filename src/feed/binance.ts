@@ -190,7 +190,7 @@ export class BinanceFeed implements FeedSource {
     }
   }
 
-  private async loadHistory(symbol: string, interval: Interval) {
+  private async loadHistory(symbol: string, interval: Interval, refresh = false) {
     const token = ++this.historyToken;
     try {
       const response = await this.deps.fetch(`${REST_URL}/klines?symbol=${symbol}&interval=${interval}&limit=500`);
@@ -198,9 +198,10 @@ export class BinanceFeed implements FeedSource {
       const rows = (await response.json()) as unknown[][];
       // a newer selection may have happened while the request was in flight
       if (token !== this.historyToken) return;
-      this.handlers.candles(symbol, interval, rows.map(parseRestKline), true);
+      this.handlers.candles(symbol, interval, rows.map(parseRestKline), true, refresh);
     } catch {
-      if (token === this.historyToken) this.handlers.candles(symbol, interval, [], true);
+      // a failed refresh keeps the candles already on screen
+      if (token === this.historyToken && !refresh) this.handlers.candles(symbol, interval, [], true);
     }
   }
 
@@ -214,6 +215,8 @@ export class BinanceFeed implements FeedSource {
       this.lastMessageAt = this.deps.now();
       this.handlers.status({ state: 'open' });
       this.syncSubscriptions();
+      // candles that closed while the socket was down never arrive on the stream
+      if (this.everReceived && this.selected) void this.loadHistory(this.selected.symbol, this.selected.interval, true);
     };
     ws.onmessage = (event) => {
       this.lastMessageAt = this.deps.now();

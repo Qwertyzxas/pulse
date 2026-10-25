@@ -83,7 +83,7 @@ function recorder() {
   const calls = {
     status: [] as unknown[],
     tickers: [] as Ticker[][],
-    candles: [] as { symbol: string; candles: Candle[]; replace: boolean }[],
+    candles: [] as { symbol: string; candles: Candle[]; replace: boolean; refresh?: boolean }[],
     book: [] as OrderBook[],
     trades: [] as Trade[][],
     fail: [] as string[],
@@ -91,7 +91,7 @@ function recorder() {
   const handlers: FeedHandlers = {
     status: (s) => calls.status.push(s),
     tickers: (t) => calls.tickers.push(t),
-    candles: (symbol, _i, candles, replace) => calls.candles.push({ symbol, candles, replace }),
+    candles: (symbol, _i, candles, replace, refresh) => calls.candles.push({ symbol, candles, replace, refresh }),
     book: (b) => calls.book.push(b),
     trades: (_s, t) => calls.trades.push(t),
     fail: (r) => calls.fail.push(r),
@@ -178,6 +178,39 @@ describe('BinanceFeed', () => {
     expect(FakeSocket.instances).toHaveLength(2);
     socket().open();
     expect(socket().sent).toHaveLength(1);
+    feed.stop();
+  });
+
+  it('reloads history after a reconnect to fill the gap, keeping candles if that fails', async () => {
+    let klinesWork = true;
+    const { feed, calls, socket } = setup((url) =>
+      url.includes('klines') ? (klinesWork ? json([REST_KLINE]) : Promise.reject(new Error('offline'))) : json([REST_TICKER]),
+    );
+    const flush = async () => {
+      await vi.runAllTicks();
+      await Promise.resolve();
+    };
+    feed.start();
+    feed.select('BTCUSDT', '1m');
+    await flush();
+    socket().open();
+    await flush();
+    expect(calls.candles.filter((c) => c.replace)).toHaveLength(1); // the first open is not a reconnect
+
+    socket().receive('!miniTicker@arr', [WS_MINI]);
+    socket().close();
+    vi.advanceTimersByTime(1000);
+    socket().open();
+    await flush();
+    expect(calls.candles.filter((c) => c.replace)).toHaveLength(2);
+    expect(calls.candles.at(-1)).toMatchObject({ symbol: 'BTCUSDT', refresh: true });
+
+    klinesWork = false;
+    socket().close();
+    vi.advanceTimersByTime(1000);
+    socket().open();
+    await flush();
+    expect(calls.candles.filter((c) => c.replace)).toHaveLength(2); // no empty history wiping the chart
     feed.stop();
   });
 

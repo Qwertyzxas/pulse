@@ -60,9 +60,10 @@ export function createMarket(transport: Transport, options: MarketOptions) {
         break;
       case 'history':
         if (event.symbol !== symbol.value || event.interval !== interval.value) return;
+        // a gap-filling refresh after a reconnect must not reset the chart viewport
+        if (!event.refresh || !historyLoaded.value) historyVersion.value++;
         candles.value = event.candles;
         historyLoaded.value = true;
-        historyVersion.value++;
         break;
       case 'batch': {
         if (event.tickers.length) {

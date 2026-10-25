@@ -9,7 +9,7 @@ export type WorkerCommand =
 /** Worker → main thread. High-frequency updates are coalesced into batches. */
 export type WorkerEvent =
   | { type: 'status'; status: Partial<FeedStatus> }
-  | { type: 'history'; symbol: string; interval: Interval; candles: Candle[] }
+  | { type: 'history'; symbol: string; interval: Interval; candles: Candle[]; refresh?: boolean }
   | {
       type: 'batch';
       tickers: Ticker[];

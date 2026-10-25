@@ -73,6 +73,11 @@ describe('market store', () => {
     transport.emit(batch({ candle: { symbol: 'ETHUSDT', interval: '1h', candle: c(3, 99) } }));
     expect(market.candles.value.map((x) => x.close)).toEqual([10, 11]);
     expect(market.historyVersion.value).toBe(1);
+
+    // a refresh after a reconnect fills the gap but keeps the chart viewport
+    transport.emit({ type: 'history', symbol: 'BTCUSDT', interval: '1h', candles: [c(1, 10), c(2, 11), c(3, 12)], refresh: true });
+    expect(market.candles.value.map((x) => x.close)).toEqual([10, 11, 12]);
+    expect(market.historyVersion.value).toBe(1);
   });
 
   it('ignores history that arrives after the user switched pairs', () => {
